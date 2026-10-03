@@ -1,0 +1,296 @@
+using System;
+using System.Collections.Generic;
+
+namespace ClassProject_4
+{
+    struct Student
+    {
+        public string StudentNumber;
+        public string Name;
+        public string Program;
+        public int YearLevel;
+    }
+
+    struct Operation
+    {
+        public string Description;
+    }
+
+    class Program
+    {
+        static Student[] students = new Student[10];
+        static int count = 0;
+        static Stack<Operation> operationHistory = new Stack<Operation>();
+
+        static void Main(string[] args)
+        {
+            int choice;
+
+            do
+            {
+                Console.Clear();
+                Console.WriteLine("===== STUDENT RECORDS + OPERATION HISTORY (Stack) =====");
+                Console.WriteLine("1. Add a student record");
+                Console.WriteLine("2. Display all student records");
+                Console.WriteLine("3. Search for a student by Student Number");
+                Console.WriteLine("4. Update a student record");
+                Console.WriteLine("5. Delete a student record");
+                Console.WriteLine("6. View Operation History");
+                Console.WriteLine("7. View Last Operation");
+                Console.WriteLine("8. Remove Last Operation");
+                Console.WriteLine("9. Exit");
+                Console.Write("Enter your choice: ");
+
+                if (!int.TryParse(Console.ReadLine(), out choice))
+                {
+                    Console.WriteLine("Invalid input. Please enter a number.");
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                    continue;
+                }
+
+                switch (choice)
+                {
+                    case 1: AddStudent(); break;
+                    case 2: DisplayAll(); break;
+                    case 3: SearchStudent(); break;
+                    case 4: UpdateStudent(); break;
+                    case 5: DeleteStudent(); break;
+                    case 6: ViewOperationHistory(); break;
+                    case 7: ViewLastOperation(); break;
+                    case 8: RemoveLastOperation(); break;
+                    case 9: Console.WriteLine("Exiting program... Goodbye!"); break;
+                    default: Console.WriteLine("Invalid choice. Please select 1-9."); break;
+                }
+
+                if (choice != 9)
+                {
+                    Console.WriteLine("\nPress any key to continue...");
+                    Console.ReadKey();
+                }
+
+            } while (choice != 9);
+        }
+
+        static string ReadInput(string prompt)
+        {
+            Console.Write(prompt);
+            return (Console.ReadLine() ?? "").Trim();
+        }
+
+        static void RecordOperation(string description)
+        {
+            Operation op = new Operation();
+            op.Description = description;
+            operationHistory.Push(op);
+        }
+
+        static void AddStudent()
+        {
+            if (count >= 10)
+            {
+                Console.WriteLine("Cannot add more students. Maximum of 10 students reached.");
+                return;
+            }
+
+            Console.WriteLine("\n--- Add Student Record ---");
+
+            Student s = new Student();
+            s.StudentNumber = ReadInput("Enter Student Number: ");
+
+            for (int i = 0; i < count; i++)
+            {
+                if (students[i].StudentNumber.Equals(s.StudentNumber, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Student Number already exists. Cannot add duplicate.");
+                    return;
+                }
+            }
+
+            s.Name = ReadInput("Enter Name: ");
+            s.Program = ReadInput("Enter Program: ");
+
+            string yearText = ReadInput("Enter Year Level (1-4): ");
+            if (!int.TryParse(yearText, out int year) || year < 1 || year > 4)
+            {
+                Console.WriteLine("Invalid Year Level. Must be 1, 2, 3, or 4.");
+                return;
+            }
+            s.YearLevel = year;
+
+            students[count] = s;
+            count++;
+
+            RecordOperation("Added " + s.Name);
+
+            Console.WriteLine("Student record added successfully!");
+        }
+
+        static void DisplayAll()
+        {
+            Console.WriteLine("\n--- All Student Records ---");
+
+            if (count == 0)
+            {
+                Console.WriteLine("No student records found.");
+                return;
+            }
+
+            Console.WriteLine("{0,-15} {1,-25} {2,-20} {3,-10}",
+                "Student Number", "Name", "Program", "Year Level");
+            Console.WriteLine(new string('-', 70));
+
+            for (int i = 0; i < count; i++)
+            {
+                Console.WriteLine("{0,-15} {1,-25} {2,-20} {3,-10}",
+                    students[i].StudentNumber,
+                    students[i].Name,
+                    students[i].Program,
+                    students[i].YearLevel);
+            }
+        }
+
+        static void SearchStudent()
+        {
+            Console.WriteLine("\n--- Search Student ---");
+            string searchNum = ReadInput("Enter Student Number to search: ");
+
+            int index = FindStudentIndex(searchNum);
+
+            if (index == -1)
+            {
+                Console.WriteLine("Student not found.");
+            }
+            else
+            {
+                Console.WriteLine("\nStudent found:");
+                Console.WriteLine("Student Number : " + students[index].StudentNumber);
+                Console.WriteLine("Name           : " + students[index].Name);
+                Console.WriteLine("Program        : " + students[index].Program);
+                Console.WriteLine("Year Level     : " + students[index].YearLevel);
+            }
+        }
+
+        static void UpdateStudent()
+        {
+            Console.WriteLine("\n--- Update Student Record ---");
+            string searchNum = ReadInput("Enter Student Number to update: ");
+
+            int index = FindStudentIndex(searchNum);
+
+            if (index == -1)
+            {
+                Console.WriteLine("Student not found.");
+                return;
+            }
+
+            Console.WriteLine("Current record:");
+            Console.WriteLine("Name       : " + students[index].Name);
+            Console.WriteLine("Program    : " + students[index].Program);
+            Console.WriteLine("Year Level : " + students[index].YearLevel);
+
+            string newName = ReadInput("\nEnter new Name (press Enter to keep current): ");
+            if (!string.IsNullOrEmpty(newName))
+                students[index].Name = newName;
+
+            string newProgram = ReadInput("Enter new Program (press Enter to keep current): ");
+            if (!string.IsNullOrEmpty(newProgram))
+                students[index].Program = newProgram;
+
+            string yearInput = ReadInput("Enter new Year Level (1-4, press Enter to keep current): ");
+            if (!string.IsNullOrEmpty(yearInput))
+            {
+                if (int.TryParse(yearInput, out int year) && year >= 1 && year <= 4)
+                    students[index].YearLevel = year;
+                else
+                    Console.WriteLine("Invalid Year Level. Keeping previous value.");
+            }
+
+            RecordOperation("Updated " + students[index].Name);
+
+            Console.WriteLine("Student record updated successfully!");
+        }
+
+        static void DeleteStudent()
+        {
+            Console.WriteLine("\n--- Delete Student Record ---");
+            string searchNum = ReadInput("Enter Student Number to delete: ");
+
+            int index = FindStudentIndex(searchNum);
+
+            if (index == -1)
+            {
+                Console.WriteLine("Student not found.");
+                return;
+            }
+
+            string deletedName = students[index].Name;
+
+            for (int i = index; i < count - 1; i++)
+            {
+                students[i] = students[i + 1];
+            }
+            count--;
+
+            RecordOperation("Deleted " + deletedName);
+
+            Console.WriteLine("Student record deleted successfully!");
+        }
+
+        static void ViewOperationHistory()
+        {
+            Console.WriteLine("\n--- Operation History (most recent first) ---");
+
+            if (operationHistory.Count == 0)
+            {
+                Console.WriteLine("No recorded operations.");
+                return;
+            }
+
+            int number = 1;
+            foreach (var op in operationHistory)
+            {
+                Console.WriteLine(number + ". " + op.Description);
+                number++;
+            }
+        }
+
+        static void ViewLastOperation()
+        {
+            Console.WriteLine("\n--- Last Operation ---");
+
+            if (operationHistory.Count == 0)
+            {
+                Console.WriteLine("No recorded operations.");
+                return;
+            }
+
+            Operation last = operationHistory.Peek();
+            Console.WriteLine("Most recent operation: " + last.Description);
+        }
+
+        static void RemoveLastOperation()
+        {
+            Console.WriteLine("\n--- Remove Last Operation ---");
+
+            if (operationHistory.Count == 0)
+            {
+                Console.WriteLine("No recorded operations to remove.");
+                return;
+            }
+
+            Operation removed = operationHistory.Pop();
+            Console.WriteLine("Removed operation: " + removed.Description);
+        }
+
+        static int FindStudentIndex(string studentNumber)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (students[i].StudentNumber.Equals(studentNumber, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
+        }
+    }
+}
